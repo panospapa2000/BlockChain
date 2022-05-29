@@ -1,4 +1,4 @@
-pragma solidity >=0.6.1;
+pragma solidity ^0.6.1;
 
 contract Market
 {
@@ -30,7 +30,7 @@ contract Market
 
     function bid(uint _itemId, uint _count) public payable
     {
-
+        _count++;
     }
 
     function revealWinners() public onlyOwner
