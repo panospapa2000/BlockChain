@@ -1,10 +1,23 @@
 pragma solidity ^0.6.1;
 
-contract Market
+contract Lottery
 {
-    mapping(address => Person) tokenDetails;
+    struct Person
+    {
+        uint personId;
+        address addr;
+        uint remainingTokens;
+    }
+    mapping(address=>Person) tokenDetails;
     Person [4] bidders;
+
+    struct Item
+    {
+        uint itemId;
+        uint itemTokens;
+    }
     Item [3] public items;
+    
     address [3] public winners;
     address public beneficiary;
 
@@ -30,7 +43,7 @@ contract Market
 
     function bid(uint _itemId, uint _count) public payable
     {
-        _count++;
+        
     }
 
     function revealWinners() public onlyOwner
