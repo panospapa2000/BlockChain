@@ -2,19 +2,19 @@ pragma solidity ^0.6.1;
 
 contract Lottery
 {
-    struct Person
+    struct Person//Δημιουργία δομής για τον παίκτη
     {
         uint personId;
         address addr;
         uint remainingTokens;
     }
-    mapping(address=>Person) tokenDetails;
+    mapping(address=>Person) tokenDetails;//Διεύθυνση του παίκτη
     Person [4] bidders;
 
-    struct Item
+    struct Item//Δημιουργία δομής για το αντικείμενο
     {
         uint itemId;
-        uint itemTokens;
+        uint[] itemTokens;
     }
 
     Item [3] public items;
@@ -22,16 +22,16 @@ contract Lottery
     address [3] public winners;
     address public beneficiary;
 
-    uint bidderCount = 0;
+    uint bidderCount = 0;//Μετρητής των εγγγραμένων παικτών
 
     constructor() public payable
     {
         beneficiary = msg.sender;
-        uint[] memory emptyArray;
 
-        items[0] = Item({itemId:0, itemTokens:0});
-        items[1] = Item({itemId:1, itemTokens:1});
-        items[2] = Item({itemId:2, itemTokens:2});
+        uint[] memory emptyArray;
+        items[0] = Item({itemId:0, itemTokens:emptyArray});
+        items[1] = Item({itemId:1, itemTokens:emptyArray});
+        items[2] = Item({itemId:2, itemTokens:emptyArray});
     }
 
     function register() public payable
@@ -51,7 +51,7 @@ contract Lottery
 
     function revealWinners() public onlyOwner
     {
-
+        
     }
 
     modifier onlyOwner//Modifier gia ton beneficiary
