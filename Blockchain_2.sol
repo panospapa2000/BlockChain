@@ -44,20 +44,33 @@ contract Lottery
         bidderCount++;
     }
 
-    function bid(uint _itemId, uint _count) public payable
+    modifier onlyBid(uint _itemId, uint _count)//Modifier για την bid
     {
+        //Δύο έλεγχοι
+        require(tokenDetails[msg.sender].remainingTokens >= _count);//Έχει επαρκές πλήθος λαχείων?
+        require(_itemId == items[0].itemId || _itemId == items[1].itemId || _itemId == items[2].itemId);// Υπάρχει το αντικείμενο?
+        _;
+    }
+
+    function bid(uint _itemId, uint _count) public onlyBid(_itemId, _count)
+    {
+        //Ενημέρωση του υπολοίπου λαχείων του παίκτη
+        uint balance = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής balance που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
+        tokenDetails[msg.sender].remainingTokens=balance;//Καταχώρηση της μεταβλητής balance, ενημερώνοντας το νέο υπόλοιπο του παίκτη
+
+        //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης
         
     }
 
-    function revealWinners() public onlyOwner
-    {
-        
-    }
-
-    modifier onlyOwner//Modifier gia ton beneficiary
+    modifier onlyOwner()//Modifier για τον revealWinners
     {
         require(msg.sender == beneficiary);
         _;
+    }
+
+    function revealWinners() public onlyOwner()
+    {
+
     }
 
     function getPersonDetails(uint id) public view returns(uint, uint, address)
