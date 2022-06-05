@@ -25,6 +25,11 @@ contract Lottery
 
     uint bidderCount = 0;//Μετρητής των εγγγραμένων παικτών
 
+    enum Stage{Init, Reg, Vote, Done}
+    Stage public stage = Stage.Init;
+
+    uint startTime;
+
     constructor() public payable
     {
         beneficiary = msg.sender;
@@ -34,10 +39,13 @@ contract Lottery
         items[1] = Item({itemId:1, itemTokens:emptyArray});
         items[2] = Item({itemId:2, itemTokens:emptyArray});
 
+        startTime = now;
     }
 
     function register() public payable onlyRegister()
     {
+        if(stage != Stage.Reg) {return;}
+
         bidders[bidderCount].personId = bidderCount;
 
         bidders[bidderCount].addr = msg.sender;
@@ -63,6 +71,7 @@ contract Lottery
 
     function bid(uint _itemId, uint _count) public onlyBid(_itemId, _count)
     {
+        
         //Ενημέρωση του υπολοίπου λαχείων του παίκτη
         uint balance = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής balance που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
         tokenDetails[msg.sender].remainingTokens=balance;//Καταχώρηση της μεταβλητής balance, ενημερώνοντας το νέο υπόλοιπο του παίκτη
@@ -104,6 +113,10 @@ contract Lottery
             }
         }
     }
+
+    //function reset() public 
+
+    //function advanceState() public
 
     function getPersonDetails(uint id) public view returns(uint, uint, address)
     {
