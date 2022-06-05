@@ -1,4 +1,4 @@
-pragma solidity ^0.6.1;
+pragma solidity >=0.6.1;
 
 contract Lottery
 {
@@ -16,6 +16,7 @@ contract Lottery
         uint itemId;
         uint[] itemTokens;
     }
+    uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει
 
     Item [3] public items;
     
@@ -32,9 +33,10 @@ contract Lottery
         items[0] = Item({itemId:0, itemTokens:emptyArray});
         items[1] = Item({itemId:1, itemTokens:emptyArray});
         items[2] = Item({itemId:2, itemTokens:emptyArray});
+
     }
 
-    function register() public payable
+    function register() public payable onlyRegister()
     {
         bidders[bidderCount].personId = bidderCount;
 
@@ -42,6 +44,13 @@ contract Lottery
         bidders[bidderCount].remainingTokens = 5;
         tokenDetails[msg.sender] = bidders[bidderCount];
         bidderCount++;
+    }
+
+    modifier onlyRegister()//Modifier για την register
+    {
+        require(msg.value > min_eth);
+        require(msg.sender != beneficiary);//Δεν επιτρέπεται στον ιδιοκτήτη του συμβολαίου
+        _;
     }
 
     modifier onlyBid(uint _itemId, uint _count)//Modifier για την bid
@@ -58,7 +67,7 @@ contract Lottery
         uint balance = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής balance που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
         tokenDetails[msg.sender].remainingTokens=balance;//Καταχώρηση της μεταβλητής balance, ενημερώνοντας το νέο υπόλοιπο του παίκτη
 
-        //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης
+        //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης | Δέν μπόρεσα να την ενημερώσω
 
     }
 
@@ -66,6 +75,7 @@ contract Lottery
     {
         //Δύο έλεγχοι
         require(msg.sender == beneficiary);//Μόνο από τον ιδιοκτήτη του συμβολαίου
+        //Μόνο αν για κάποιο αντικείμενο υπάρχει νικητής
         _;
     }
 
@@ -74,17 +84,23 @@ contract Lottery
         //return uint(keccak256(block.winners));
     }
 
+    function withdraw(uint256 amount) public onlyOwner
+    {
+        msg.sender.transfer(amount);//Μεταφορά των ether απο το συμβόλαιο
+    }
+
     function revealWinners() public onlyOwner()
     {
-        for (uint i = 0; i < 3; i++)
+        for (uint id = 0; id < 3; id++)
         {
-            Item memory currItem = items[i];
-            //if(currItem[i].itemTokens.length != 0)
+
+            Item memory currItem = items[id];
+            //if(currItem[id].itemTokens.length != 0) | Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
             {
                 uint index = random() % winners.length;
                 uint winnerId = currItem.itemTokens[index];
                 
-                winners[i] = bidders[winnerId].addr;//Ενημέρωση του πίνακα winners με την διεύθυνση του νικητή
+                winners[id] = bidders[winnerId].addr;//Ενημέρωση του πίνακα winners με την διεύθυνση του νικητή
             }
         }
     }
