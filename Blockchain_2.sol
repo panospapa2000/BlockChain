@@ -16,7 +16,7 @@ contract Lottery
         uint itemId;
         uint[] itemTokens;
     }
-    uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει
+    uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει. Επίσης δεν μου το αναγνωρίζει ως δεκαδικό αριθμό το 0.01.
 
     Item [3] public items;
     
@@ -25,10 +25,16 @@ contract Lottery
 
     uint bidderCount = 0;//Μετρητής των εγγγραμένων παικτών
 
-    enum Stage{Init, Reg, Vote, Done}
+    enum Stage{Init, Reg, Bid, Done}
     Stage public stage = Stage.Init;
-
+    uint public timeNow;
     uint startTime;
+
+    modifier validStage(Stage reqStage)//Έναν modifier για κάθε Stage σε αντίστοιχη συνάρτηση
+    {
+        require(stage== reqStage);
+        _;
+    }
 
     constructor() public payable
     {
@@ -39,19 +45,20 @@ contract Lottery
         items[1] = Item({itemId:1, itemTokens:emptyArray});
         items[2] = Item({itemId:2, itemTokens:emptyArray});
 
+        stage = Stage.Reg;
         startTime = now;
     }
 
-    function register() public payable onlyRegister()
+    function register() public payable onlyRegister() validStage(Stage.Reg)//Υπάρχει χώρος για 2 modifiers
     {
-        if(stage != Stage.Reg) {return;}
-
         bidders[bidderCount].personId = bidderCount;
 
         bidders[bidderCount].addr = msg.sender;
         bidders[bidderCount].remainingTokens = 5;
         tokenDetails[msg.sender] = bidders[bidderCount];
         bidderCount++;
+
+        if (now > (startTime + 30 seconds)) {stage = Stage.Bid; }
     }
 
     modifier onlyRegister()//Modifier για την register
@@ -69,15 +76,14 @@ contract Lottery
         _;
     }
 
-    function bid(uint _itemId, uint _count) public onlyBid(_itemId, _count)
+    function bid(uint _itemId, uint _count) public onlyBid(_itemId, _count) validStage(Stage.Bid)
     {
-        
         //Ενημέρωση του υπολοίπου λαχείων του παίκτη
         uint balance = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής balance που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
         tokenDetails[msg.sender].remainingTokens=balance;//Καταχώρηση της μεταβλητής balance, ενημερώνοντας το νέο υπόλοιπο του παίκτη
 
         //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης | Δέν μπόρεσα να την ενημερώσω
-
+        if (now > (startTime + 30 seconds)) {stage = Stage.Done; }
     }
 
     modifier onlyOwner()//Modifier για τον revealWinners
@@ -98,13 +104,14 @@ contract Lottery
         msg.sender.transfer(amount);//Μεταφορά των ether απο το συμβόλαιο
     }
 
-    function revealWinners() public onlyOwner()
+    function revealWinners() public onlyOwner() validStage(Stage.Done)
     {
+        if (stage != Stage.Done) {return;}
         for (uint id = 0; id < 3; id++)
         {
 
             Item memory currItem = items[id];
-            //if(currItem[id].itemTokens.length != 0) | Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
+            //if(currItem[id].itemTokens.length != 0)// Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
             {
                 uint index = random() % winners.length;
                 uint winnerId = currItem.itemTokens[index];
@@ -114,9 +121,20 @@ contract Lottery
         }
     }
 
-    //function reset() public 
+    function reset() public
+    {
+        
+    }
 
-    //function advanceState() public
+    function advanceState() public
+    {
+        timeNow = now;
+        if (timeNow > (startTime + 30 seconds)) {startTime = timeNow;}
+        if (stage == Stage.Init) {stage = Stage.Reg; return;}
+        if (stage == Stage.Reg) {stage = Stage.Bid; return;}
+        if (stage == Stage.Bid) {stage = Stage.Done; return;}
+        return;
+    }
 
     function getPersonDetails(uint id) public view returns(uint, uint, address)
     {
