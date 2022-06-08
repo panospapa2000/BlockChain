@@ -10,19 +10,18 @@ contract Lottery
     }
     mapping(address=>Person) tokenDetails;//Διεύθυνση του παίκτη
     Person [4] bidders;
-
     struct Item//Δημιουργία δομής για το αντικείμενο
     {
         uint itemId;
         uint[] itemTokens;
     }
-    uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει. Επίσης δεν μου το αναγνωρίζει ως δεκαδικό αριθμό το 0.01.
-
+    mapping(address=>Item) itemDetails;
     Item [3] public items;
     
     address [3] public winners;
     address public beneficiary;
 
+    uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει. Επίσης δεν μου το αναγνωρίζει ως δεκαδικό αριθμό το 0.01, γιαυτό έβαλα 1.
     uint bidderCount = 0;//Μετρητής των εγγγραμένων παικτών
 
     enum Stage{Init, Reg, Bid, Done}
@@ -30,9 +29,11 @@ contract Lottery
     uint public timeNow;
     uint startTime;
 
+    uint plithos = 0;//ο αριθμός της λαχειοφόρου
+
     modifier validStage(Stage reqStage)//Έναν modifier για κάθε Stage σε αντίστοιχη συνάρτηση
     {
-        require(stage== reqStage);
+        require(stage == reqStage);
         _;
     }
 
@@ -41,9 +42,10 @@ contract Lottery
         beneficiary = msg.sender;
 
         uint[] memory emptyArray;
-        items[0] = Item({itemId:0, itemTokens:emptyArray});
-        items[1] = Item({itemId:1, itemTokens:emptyArray});
-        items[2] = Item({itemId:2, itemTokens:emptyArray});
+        for(uint i = 0; i<3; i++)
+        {
+            items[i] = Item({itemId:i, itemTokens:emptyArray});
+        }
 
         stage = Stage.Reg;
         startTime = now;
@@ -104,6 +106,8 @@ contract Lottery
         msg.sender.transfer(amount);//Μεταφορά των ether απο το συμβόλαιο
     }
 
+    event Winner(address winner, uint item, uint lottery);
+
     function revealWinners() public onlyOwner() validStage(Stage.Done)
     {
         if (stage != Stage.Done) {return;}
@@ -117,11 +121,12 @@ contract Lottery
                 uint winnerId = currItem.itemTokens[index];
                 
                 winners[id] = bidders[winnerId].addr;//Ενημέρωση του πίνακα winners με την διεύθυνση του νικητή
+                //emit Winner(bidders[winnerId].addr, currItem[index].itemId, plithos);
             }
         }
     }
 
-    function reset() public
+    function reset() public onlyOwner 
     {
         
     }
