@@ -15,12 +15,12 @@ contract Lottery
         uint itemId;
         uint[] itemTokens;
     }
-    mapping(address=>Item) itemDetails;
     Item [3] public items;
     
     address [3] public winners;
     address public beneficiary;
 
+    uint public winnerId;
     uint min_eth = 1;//Το ελάχιστο ποσό που πρέπει να μεταφέρει. Επίσης δεν μου το αναγνωρίζει ως δεκαδικό αριθμό το 0.01, γιαυτό έβαλα 1.
     uint bidderCount = 0;//Μετρητής των εγγγραμένων παικτών
 
@@ -47,7 +47,7 @@ contract Lottery
             items[i] = Item({itemId:i, itemTokens:emptyArray});
         }
 
-        stage = Stage.Reg;
+        stage = Stage.Init;
         startTime = now;
     }
 
@@ -81,10 +81,15 @@ contract Lottery
     function bid(uint _itemId, uint _count) public onlyBid(_itemId, _count) validStage(Stage.Bid)
     {
         //Ενημέρωση του υπολοίπου λαχείων του παίκτη
-        uint balance = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής balance που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
-        tokenDetails[msg.sender].remainingTokens=balance;//Καταχώρηση της μεταβλητής balance, ενημερώνοντας το νέο υπόλοιπο του παίκτη
+        uint upoloipo = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής upoloipo που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
+        tokenDetails[msg.sender].remainingTokens=upoloipo;//Καταχώρηση της μεταβλητής upoloipo, ενημερώνοντας το νέο υπόλοιπο του παίκτη
 
         //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης | Δέν μπόρεσα να την ενημερώσω
+        Item storage klirotida = items[_itemId];
+        for(uint i=0; i<_count; i++)
+        {
+            klirotida.itemTokens.push(tokenDetails[msg.sender].personId);
+        }
         if (now > (startTime + 30 seconds)) {stage = Stage.Done; }
     }
 
@@ -92,13 +97,13 @@ contract Lottery
     {
         //Δύο έλεγχοι
         require(msg.sender == beneficiary);//Μόνο από τον ιδιοκτήτη του συμβολαίου
-        //Μόνο αν για κάποιο αντικείμενο υπάρχει νικητής
         _;
     }
 
-    function random() private view returns(uint)
+    function random(uint number) private view returns(uint)
     {
-        //return uint(keccak256(block.winners));
+        return uint(keccak256(abi.encodePacked(block.timestamp,block.difficulty,  
+        msg.sender))) % number;
     }
 
     function withdraw(uint256 amount) public onlyOwner
@@ -111,24 +116,25 @@ contract Lottery
     function revealWinners() public onlyOwner() validStage(Stage.Done)
     {
         if (stage != Stage.Done) {return;}
-        for (uint id = 0; id < 3; id++)
+        for (uint i = 0; i < 3; i++)
         {
 
-            Item memory currItem = items[id];
-            //if(currItem[id].itemTokens.length != 0)// Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
+            Item memory currItem = items[i];
+            if(currItem.itemTokens.length != 0)// Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
             {
-                uint index = random() % winners.length;
-                uint winnerId = currItem.itemTokens[index];
+                uint index = random(3) % winners.length;
+                winnerId = currItem.itemTokens[index];
                 
-                winners[id] = bidders[winnerId].addr;//Ενημέρωση του πίνακα winners με την διεύθυνση του νικητή
-                //emit Winner(bidders[winnerId].addr, currItem[index].itemId, plithos);
+                winners[i] = bidders[winnerId].addr;//Ενημέρωση του πίνακα winners με την διεύθυνση του νικητή
+                emit Winner(bidders[winnerId].addr, currItem.itemId, plithos);
             }
         }
     }
 
     function reset() public onlyOwner 
     {
-        
+        stage = Stage.Reg;
+        plithos++;//Ο αριθμός της λαχειοφόρου αυξάνεται κατά 1
     }
 
     function advanceState() public
