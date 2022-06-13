@@ -84,7 +84,7 @@ contract Lottery
         uint upoloipo = tokenDetails[msg.sender].remainingTokens - _count;//Ορισμός μεταβλητής upoloipo που δηλώνει το υπόλοιπο λαχείων με αφαίρεση του _count
         tokenDetails[msg.sender].remainingTokens=upoloipo;//Καταχώρηση της μεταβλητής upoloipo, ενημερώνοντας το νέο υπόλοιπο του παίκτη
 
-        //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης | Δέν μπόρεσα να την ενημερώσω
+        //Ενημέρωση της κληρωτίδας του _itemId με εισαγωγή των _count λαχείων που ποντάρει ο παίκτης
         Item storage klirotida = items[_itemId];
         for(uint i=0; i<_count; i++)
         {
@@ -95,7 +95,6 @@ contract Lottery
 
     modifier onlyOwner()//Modifier για τον revealWinners
     {
-        //Δύο έλεγχοι
         require(msg.sender == beneficiary);//Μόνο από τον ιδιοκτήτη του συμβολαίου
         _;
     }
@@ -118,9 +117,8 @@ contract Lottery
         if (stage != Stage.Done) {return;}
         for (uint i = 0; i < 3; i++)
         {
-
             Item memory currItem = items[i];
-            if(currItem.itemTokens.length != 0)// Δεν μπόρεσα να καταλάβω γιατί δεν με αφήνει
+            if(currItem.itemTokens.length != 0 && winnerId==0)
             {
                 uint index = random(3) % winners.length;
                 winnerId = currItem.itemTokens[index];
@@ -134,6 +132,8 @@ contract Lottery
     function reset() public onlyOwner 
     {
         stage = Stage.Reg;
+        delete bidders;//Διαγραφή του πίνακα των παικτών
+        delete winners;//Διαγραφή του πίνακα των νικητών
         plithos++;//Ο αριθμός της λαχειοφόρου αυξάνεται κατά 1
     }
 
